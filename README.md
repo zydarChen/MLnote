@@ -1,2 +1,2 @@
 # MLnote
-Machine Learning &amp; Deep Learning Studying Notebook
+Machine Learning and Deep Learning Studying Notebook
