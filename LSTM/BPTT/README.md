@@ -307,3 +307,146 @@ plt.plot(vanishing_grads)
 ```
 
 	![RNN_output_19_1.png](../../res/RNN_output_19_1.png)
+
+### Quick accuracy test
+一个完整检查，以确保真截断反向传播算法运行正确。
+
+```python
+# first test using bptt_steps >= num_steps
+
+reset_graph()
+g = build_graph(num_steps = 7, bptt_steps = 7)
+X, Y = next(reader.ptb_iterator(train_data, batch_size=200, num_steps=7))
+
+with tf.Session() as sess:
+    sess.run(tf.initialize_all_variables())
+    gvs_bptt, gvs_tf =\
+        sess.run([g['gvs_true_bptt'],g['gvs_tf_style']],
+                                feed_dict={g['x']:X, g['y']:Y, g['dropout']: 0.8})
+
+# assert embedding gradients are the same
+assert(np.max(gvs_bptt[0][0] - gvs_tf[0][0]) < 1e-4)
+# assert weight gradients are the same
+assert(np.max(gvs_bptt[1][0] - gvs_tf[1][0]) < 1e-4)
+# assert bias gradients are the same
+assert(np.max(gvs_bptt[2][0] - gvs_tf[2][0]) < 1e-4)
+```
+
+## 实验
+```python
+"""
+Train the network
+"""
+
+def train_network(num_epochs,
+                  num_steps,
+                  use_true_bptt,
+                  batch_size = 200,
+                  bptt_steps = 7,
+                  state_size = 4,
+                  learning_rate = 0.01,
+                  dropout = 0.8,
+                  verbose = True):
+
+    reset_graph()
+    tf.set_random_seed(1234)
+    g = build_graph(num_steps = num_steps,
+                    bptt_steps = bptt_steps,
+                    state_size = state_size,
+                    batch_size = batch_size,
+                   learning_rate = learning_rate)
+    if use_true_bptt:
+        train_step = g['train_true_bptt']
+    else:
+        train_step = g['train_tf_style']
+    with tf.Session() as sess:
+        sess.run(tf.initialize_all_variables())
+        training_losses = []
+        val_losses = []
+        for idx, epoch in enumerate(gen_epochs(num_epochs, num_steps, batch_size)):
+            training_loss = 0
+            steps = 0
+            training_state = np.zeros((batch_size, state_size))
+            for X, Y in epoch:
+                steps += 1
+                training_loss_, training_state, _ = sess.run([g['loss'],
+                                                      g['final_state'],
+                                                      train_step],
+                                                  feed_dict={g['x']: X,
+                                                             g['y']: Y,
+                                                             g['dropout']: dropout,
+                                                             g['init_state']: training_state})
+                training_loss += training_loss_
+            if verbose:
+                print("Average training loss for Epoch", idx, ":", training_loss/steps)
+            training_losses.append(training_loss/steps)
+
+            val_loss = 0
+            steps = 0
+            training_state = np.zeros((batch_size, state_size))
+
+            for X,Y in reader.ptb_iterator(val_data, batch_size, num_steps):
+                steps += 1
+                val_loss_, training_state = sess.run([g['loss'],
+                                                      g['final_state']],
+                                                  feed_dict={g['x']: X,
+                                                             g['y']: Y,
+                                                             g['dropout']: 1,
+                                                             g['init_state']: training_state})
+                val_loss += val_loss_
+            if verbose:
+                print("Average validation loss for Epoch", idx, ":", val_loss/steps)
+                print("***")
+            val_losses.append(val_loss/steps)
+
+    return training_losses, val_losses
+```
+
+## 结果
+```python
+# Procedure to collect results
+# Note: this takes a few hours to run
+
+bptt_steps = [(5,20), (10,30), (20,40), (40,40)]
+lrs = [0.003, 0.001, 0.0003]
+for bptt_step, lr in ((x, y) for x in bptt_steps for y in lrs):
+    _, val_losses = \
+        train_network(20, bptt_step[0], use_true_bptt=False, state_size=100,
+                      batch_size=32, learning_rate=lr, verbose=False)
+    print("** TF STYLE **", bptt_step, lr)
+    print(np.min(val_losses))
+    if bptt_step[0] != 0:
+        _, val_losses = \
+            train_network(20, bptt_step[1], use_true_bptt=True, bptt_steps= bptt_step[0],
+                          state_size=100, batch_size=32, learning_rate=lr, verbose=False)
+        print("** TRUE STYLE **", bptt_step, lr)
+        print(np.min(val_losses))
+```
+
+Minimum validation loss achieved in 20 epochs:
+
+
+|BPTT Steps|5| | |
+|----------|-|-|-|
+|Learning Rate|0.003|0.001|0.0003|
+|True (20-seq)|5.12|5.01|5.09|
+|TF Style|5.21|5.04|5.04|
+
+|BPTT Steps|10| | |
+|----------|-|-|-|
+|Learning Rate|0.003|0.001|0.0003|
+|True (30-seq)|5.07|5.00|5.12|
+|TF Style|5.15|5.03|5.05|
+
+|BPTT Steps|20| | |
+|----------|-|-|-|
+|Learning Rate|0.003|0.001|0.0003|
+|True (40-seq)|5.05|5.00|5.15|
+|TF Style|5.11|4.99|5.08|
+
+|BPTT Steps|40| | |
+|----------|-|-|-|
+|Learning Rate|0.003|0.001|0.0003|
+|TF Style|5.05|4.99|5.15|
+
+## Discussion
