@@ -241,18 +241,15 @@ X, Y = next(reader.ptb_iterator(train_data, batch_size=200, num_steps=40))
 gvs_bptt = sess.run(g['gvs_true_bptt'], feed_dict={g['x']:X, g['y']:Y, g['dropout']: 1})
 ```
 
-```python
-10 loops, best of 3: 173 ms per loop
-```
+
+	10 loops, best of 3: 173 ms per loop
 
 ```python
 %%timeit
 gvs_tf = sess.run(g['gvs_tf_style'], feed_dict={g['x']:X, g['y']:Y, g['dropout']: 1})
 ```
 
-```python
-10 loops, best of 3: 80.2 ms per loop
-```
+	10 loops, best of 3: 80.2 ms per loop
 
 ### 梯度消失演示
 为了掩饰梯度消失问题，收集以下信息。如你所见，梯度很快就会消失，每一步都会减少3-4倍。
@@ -271,15 +268,14 @@ vanishing_grads = np.sum(np.sum(np.abs(vanishing_grads),axis=1),axis=1)
 
 vanishing_grads
 ```
-```python
-array([  5.28676978e-08,   1.51207473e-07,   4.04591049e-07,
-         1.55859300e-06,   5.00411124e-06,   1.32292716e-05,
-         3.94736344e-05,   1.17605050e-04,   3.37805774e-04,
-         1.01710076e-03,   2.74375151e-03,   8.92040879e-03,
-         2.23708227e-02,   7.23497868e-02,   2.45202959e-01,
-         7.39126682e-01,   2.19093657e+00,   6.16793633e+00,
-         2.27248211e+01,   9.78200531e+01], dtype=float32)
-```
+
+	array([  5.28676978e-08,   1.51207473e-07,   4.04591049e-07,
+	         1.55859300e-06,   5.00411124e-06,   1.32292716e-05,
+	         3.94736344e-05,   1.17605050e-04,   3.37805774e-04,
+	         1.01710076e-03,   2.74375151e-03,   8.92040879e-03,
+	         2.23708227e-02,   7.23497868e-02,   2.45202959e-01,
+	         7.39126682e-01,   2.19093657e+00,   6.16793633e+00,
+	         2.27248211e+01,   9.78200531e+01], dtype=float32)
 
 ```python
 for i in range(len(vanishing_grads) - 1):
@@ -305,3 +301,9 @@ for i in range(len(vanishing_grads) - 1):
 	2.81521
 	3.68435
 	4.30455
+
+```python
+plt.plot(vanishing_grads)
+```
+
+	![RNN_output_19_1.png](../../res/RNN_output_19_1.png)
