@@ -448,6 +448,7 @@ Minimum validation loss achieved in 20 epochs:
 |TF Style|5.05|4.99|5.15|
 
 ## Discussion
+如你所见，当以相同的steps截断误差时，“真”截断反向传播算法似乎比Tensorflow-style好。但是，随着BPTT steps逐渐增加，这种优势逐渐减弱，当Tensorflow-style截断反向传播steps使用序列长度时，这种优势便消失了，甚至反过来。
 As you can see, true truncated backpropagation seems to have an advantage over Tensorflow-style truncated backpropagation when truncating errors at the same number of steps. However, this advantage completely disappears (and actually reverses) when comparing true truncated backpropagation to Tensorflow-style truncated backpropagation that uses the same sequence length.
 
 所以结论是：
