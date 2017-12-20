@@ -448,3 +448,13 @@ Minimum validation loss achieved in 20 epochs:
 |TF Style|5.05|4.99|5.15|
 
 ## Discussion
+As you can see, true truncated backpropagation seems to have an advantage over Tensorflow-style truncated backpropagation when truncating errors at the same number of steps. However, this advantage completely disappears (and actually reverses) when comparing true truncated backpropagation to Tensorflow-style truncated backpropagation that uses the same sequence length.
+
+所以结论是：
+- 一个实现得很好、均匀分布的截断反向传播算法与全反向传播（full backpropagation）算法在运行速度上相近，而全反向传播算法在性能上稍微好一点。
+- 初步实验表明，n-step Tensorflow-style 反向传播（with num_step=n）并不能有效地反向传播整个n steps误差。因此，如果使用Tensorflow-style 截断反向传播并且需要捕捉n-step依赖关系，则可以使用明显高于n的num_step
+以便于有效地将误差反向传播所需地n steps。
+
+**Edit**: After writing this post, I discovered that this distinction between styles of truncated backpropagation is discussed in Williams and Zipser (1992), Gradient-Based Learning Algorithms for Recurrent Networks and Their Computation Complexity. The authors refer to the “true” truncated backpropagation as “truncated backpropagation” or BPTT(n) [or BPTT(n, 1)], whereas they refer to Tensorflow-style truncated backpropagation as “epochwise truncated backpropagation” or BPTT(n, n). They also allow for semi-epochwise truncated BPTT, which would do a backward pass more often than once per sequence, but less often than all possible times (i.e., in Ilya Sutskever’s language used above, this would be BPTT(k2, k1), where 1 < k1 < k2).
+
+In Williams and Peng (1990), An Efficien Gradient-Based Algorithm for On-Line Training of Recurrent Network Trajectories, the authors conduct a similar experiment to the one in the post, and reach similar conclusions. In particular, Williams Peng write that: “The results of these experiments have been that the success rate of BPTT(2h; h) is essentially identical to that of BPTT(h)”. In other words, they compared “true” truncated backpropagation, with h steps of truncation, to BPTT(2h, h), which is similar to Tensorflow-style backpropagation and has 2h steps of truncation, and found that they performed similarly.
