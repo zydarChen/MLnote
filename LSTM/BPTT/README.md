@@ -23,9 +23,14 @@ Tensorflow-style反向传播使用`k1=k2(=num_steps)`（详情请参阅[Tensorfl
 举个例子解释这两种方法的不同。序列长度为49，反向传播截断为7 steps。相同的是，每个误差都会反向传播7 steps。但是，对于Tensorflow-style截断反向传播，序列会切分成长度为7的7个子序列，并且只有7个误差被反向传播了7 steps。而对于“真”截断反向传播而言，42个误差能被反向传播7 steps就应该42个都反向传播7 steps。这就产生了不同，因为使用7-steps与1-steps更新权重明显不同。
 
 为了可视化差异，下图表示的是序列长度为6，误差反向传播3 steps：
-![RNN_true_truncated_backprop.png](../res/RNN_true_truncated_backprop.png)
+
+![RNN_true_truncated_backprop.png](../../res/RNN_true_truncated_backprop.png)
 下图是Tensorflow-style截断反向传播在同一序列上的情况：
-![RNN_tf_truncated_backprop.png](../res/RNN_tf_truncated_backprop.png)
+
+![RNN_tf_truncated_backprop.png](../../res/RNN_tf_truncated_backprop.png)
+
+## 实验设计
+
 
 
 
