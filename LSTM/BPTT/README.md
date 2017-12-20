@@ -2,8 +2,6 @@
 
 > [Styles of Truncated Backpropagation](https://r2rt.com/styles-of-truncated-backpropagation.html)
 
-> [零基础入门深度学习(5) - 循环神经网络](https://zybuluo.com/hanbingtao/note/541458)
-
 # Styles of Truncated Backpropagation
 笔者在之前的博文[Recurrent Neural Networks in Tensorflow](https://r2rt.com/recurrent-neural-networks-in-tensorflow-i.html)中观察到，TensorFlow的截断反向（输入长度为n的阶段子序列）传播方式与“误差最多反向传播n steps”不同。笔者将在这篇博文中基于TensorFlow实现不同的截断反向传播算法，并研究哪种方法更好。
 
@@ -306,7 +304,7 @@ for i in range(len(vanishing_grads) - 1):
 plt.plot(vanishing_grads)
 ```
 
-	![RNN_output_19_1.png](../../res/RNN_output_19_1.png)
+![RNN_output_19_1.png](../../res/RNN_output_19_1.png)
 
 ### Quick accuracy test
 一个完整检查，以确保真截断反向传播算法运行正确。
@@ -429,20 +427,20 @@ Minimum validation loss achieved in 20 epochs:
 |BPTT Steps|5| | |
 |----------|-|-|-|
 |Learning Rate|0.003|0.001|0.0003|
-|True (20-seq)|5.12|5.01|5.09|
-|TF Style|5.21|5.04|5.04|
+|True (20-seq)|**5.12**|**5.01**|5.09|
+|TF Style|5.21|5.04|**5.04**|
 
 |BPTT Steps|10| | |
 |----------|-|-|-|
 |Learning Rate|0.003|0.001|0.0003|
-|True (30-seq)|5.07|5.00|5.12|
-|TF Style|5.15|5.03|5.05|
+|True (30-seq)|**5.07**|**5.00**|5.12|
+|TF Style|5.15|5.03|**5.05**|
 
 |BPTT Steps|20| | |
 |----------|-|-|-|
 |Learning Rate|0.003|0.001|0.0003|
-|True (40-seq)|5.05|5.00|5.15|
-|TF Style|5.11|4.99|5.08|
+|True (40-seq)|**5.05**|5.00|5.15|
+|TF Style|5.11|**4.99**|**5.08**|
 
 |BPTT Steps|40| | |
 |----------|-|-|-|
