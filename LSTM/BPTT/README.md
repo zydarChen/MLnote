@@ -3,24 +3,24 @@
 > [Styles of Truncated Backpropagation](https://r2rt.com/styles-of-truncated-backpropagation.html)
 
 # Styles of Truncated Backpropagation
-笔者在之前的博文[Recurrent Neural Networks in Tensorflow](https://r2rt.com/recurrent-neural-networks-in-tensorflow-i.html)中观察到，TensorFlow的截断反向（输入长度为n的阶段子序列）传播方式与“误差最多反向传播n steps”不同。笔者将在这篇博文中基于TensorFlow实现不同的截断反向传播算法，并研究哪种方法更好。
+笔者在之前的博文[Recurrent Neural Networks in Tensorflow](https://r2rt.com/recurrent-neural-networks-in-tensorflow-i.html)中观察到，TensorFlow的截断反向传播方式与“误差最多反向传播n steps”不同。笔者将在这篇博文中基于TensorFlow实现不同的截断反向传播算法，并研究哪种方法更好。
 
 结论是：
 - 一个实现得很好、均匀分布的截断反向传播算法与全反向传播（full backpropagation）算法在运行速度上相近，而全反向传播算法在性能上稍微好一点。
 - 初步实验表明，n-step Tensorflow-style 反向传播（with num_step=n）并不能有效地反向传播整个n steps误差。因此，如果使用Tensorflow-style 截断反向传播并且需要捕捉n-step依赖关系，则可以使用明显高于n的num_step
-以便于有效地将误差反向传播所需地n steps。
+以便于有效地将误差反向传播所需的n steps。
 
 ## Differences in styles of truncated backpropagation
-假设要训练一个RNN，训练集为长度10,000的序列。如果我们使用非截断反向传播，那么整个序列会一次性地喂给网络，在10,000时刻的误差会被一直传递到时刻1。这会导致两个问题：
+假设要训练一个RNN，训练集为长度10,000的序列。如果我们使用非截断反向传播，那么整个序列会一次性地喂给网络，在时刻10,000的误差会一直传递到时刻1。这会导致两个问题：
 1. 误差反向传播这么多步的计算开销大
 2. 由于梯度消失，反向传播误差逐层变小，使得进一步的反向传播不再重要
 
-可以使用“截断”反向传播解决这个问题，Ilya Sutskever博士[这篇](http://202.38.196.91/cache/6/03/www.cs.utoronto.ca/96b2e707823b366dbfe710eeeedf95b3/ilya_sutskever_phd_thesis.pdf)文章的2.8.6节有一个对反向传播很好的描述：
+可以使用“截断”反向传播解决这个问题，Ilya Sutskever博士[这篇](http://202.38.196.91/cache/6/03/www.cs.utoronto.ca/96b2e707823b366dbfe710eeeedf95b3/ilya_sutskever_phd_thesis.pdf)文章的2.8.6节有一个对截断反向传播很好的描述：
 > “[Truncated backpropagation] processes the sequence one timestep at a time, and every k1 timesteps, it runs BPTT for k2 timesteps…”
 
 Tensorflow-style反向传播使用`k1=k2(=num_steps)`（详情请参阅[Tensorflow Api](https://www.tensorflow.org/tutorials/recurrent#truncated-backpropagation)）。本文提出的问题是：`k1=1`能否得到一个更好的结果。本文认为，“真”截断反向传播是：每次反向传播k2 steps都是传播了整个k2 steps。
 
-举个例子解释这两种方法的不同。序列长度为49，反向传播截断为7 steps。相同的是，每个误差都会反向传播7 steps。但是，对于Tensorflow-style截断反向传播，序列会切分成长度为7的7个子序列，并且只有7个误差被反向传播了7 steps。而对于“真”截断反向传播而言，42个误差能被反向传播7 steps就应该42个都反向传播7 steps。这就产生了不同，因为使用7-steps与1-steps更新权重明显不同。
+举个例子解释这两种方法的不同。序列长度为49，反向传播截断为7 steps。相同的是，每个误差都会反向传播7 steps。但是，对于Tensorflow-style截断反向传播，序列会被切分成长度为7的7个子序列，并且只有7个误差被反向传播了7 steps。而对于“真”截断反向传播而言，42个误差能被反向传播7 steps就应该42个都反向传播7 steps。这就产生了不同，因为使用7-steps与1-steps更新权重明显不同。
 
 为了可视化差异，下图表示的是序列长度为6，误差反向传播3 steps：
 
@@ -31,7 +31,7 @@ Tensorflow-style反向传播使用`k1=k2(=num_steps)`（详情请参阅[Tensorfl
 ![RNN_tf_truncated_backprop.png](../../res/RNN_tf_truncated_backprop.png)
 
 ## 实验设计
-为了比较两种算法的性能，笔者实现了一个“真”截断反向传播算法，并与vanilla-RNN比较结果。vanilla-RNN是笔者在先前的博文[Recurrent Neural Networks in Tensorflow I](https://r2rt.com/recurrent-neural-networks-in-tensorflow-i.html)中使用的模型。不同的是，先前的网络在toy数据集上学习简单模式非常快，而本次提升了任务和模型的复杂性。这次是任务对ptb数据集进行语言建模，在基本的RNN模型中添加了一个embedding层和dropout层用以匹配任务的复杂性。
+为了比较两种算法的性能，笔者实现了一个“真”截断反向传播算法，并与vanilla-RNN比较结果。vanilla-RNN是笔者在先前的博文[Recurrent Neural Networks in Tensorflow I](https://r2rt.com/recurrent-neural-networks-in-tensorflow-i.html)中使用的模型。不同的是，先前的网络在toy数据集上学习简单模式非常快，而本次提升了任务和模型的复杂性。这次任务是对ptb数据集进行语言建模，在基本的RNN模型中添加了一个embedding层和dropout层用以匹配任务的复杂性。
 
 实验比较了每个算法20 epochs训练后验证集上的最佳性能，使用的是Adam Optimizer（初步实验它比其他Optimizer好），学习率设置为0.003，0.001和0.0003。
 
@@ -250,7 +250,7 @@ gvs_tf = sess.run(g['gvs_tf_style'], feed_dict={g['x']:X, g['y']:Y, g['dropout']
 	10 loops, best of 3: 80.2 ms per loop
 
 ### 梯度消失演示
-为了掩饰梯度消失问题，收集以下信息。如你所见，梯度很快就会消失，每一步都会减少3-4倍。
+为了演示梯度消失问题，收集以下信息。如你所见，梯度很快就会消失，每一步都会减少3-4倍。
 
 ```python
 vanishing_grads, gvs = sess.run([g['vanishing_grads'], g['gvs_true_bptt']],
@@ -448,7 +448,7 @@ Minimum validation loss achieved in 20 epochs:
 |TF Style|5.05|4.99|5.15|
 
 ## Discussion
-如你所见，当以相同的steps截断误差时，“真”截断反向传播算法似乎比Tensorflow-style好。但是，随着BPTT steps逐渐增加，这种优势逐渐减弱，当Tensorflow-style截断反向传播steps使用序列长度时，这种优势便消失了，甚至反过来。
+如你所见，当以相同的steps截断误差时，“真”截断反向传播算法似乎比Tensorflow-style好。但是，随着BPTT steps逐渐增加，这种优势逐渐减弱，当Tensorflow-style截断反向传播steps为序列长度时，这种优势便消失了，甚至反过来。
 
 所以结论是：
 - 一个实现得很好、均匀分布的截断反向传播算法与全反向传播（full backpropagation）算法在运行速度上相近，而全反向传播算法在性能上稍微好一点。
@@ -457,4 +457,4 @@ Minimum validation loss achieved in 20 epochs:
 
 **Edit**: 写完这篇博文之后，才发现关于不同的截断反向传播已经在[ Williams and Zipser (1992), Gradient-Based Learning Algorithms for Recurrent Networks and Their Computation Complexity](https://web.stanford.edu/class/psych209a/ReadingsByDate/02_25/Williams%20Zipser95RecNets.pdf)这篇论文中讨论。作者将本文中提到的“真”反向传播定义为“截断反向传播”，表示为：BPTT(n)/BPTT(n, 1)；而Tensorflow-style截断反向传播定义为“epochwise 截断反向传播”，表示为：BPTT(n, n)。同时允许“semi-epochwise”截断BPTT，which would do a backward pass more often than once per sequence, but less often than all possible times (i.e., in Ilya Sutskever’s language used above, this would be BPTT(k2, k1), where 1 < k1 < k2).【译者注：本人才疏学浅未理解】
 
-在[ Williams and Peng (1990), An Efficien Gradient-Based Algorithm for On-Line Training of Recurrent Network Trajectories](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.56.7941&rep=rep1&type=pdf)中，作者进行了类似本文的实验，并得出与本文类似的结论。Williams Peng写到“The results of these experiments have been that the success rate of BPTT(2h; h) is essentially identical to that of BPTT(h)”，也就是说，他比较了“真”截断h-steps反向传播与BPTT(2h, h)(这与截断2h-steps Tensorflow-style反向传播相似)，最终发现它们表现相近。
+在[ Williams and Peng (1990), An Efficien Gradient-Based Algorithm for On-Line Training of Recurrent Network Trajectories](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.56.7941&rep=rep1&type=pdf)中，作者进行了类似本文的实验，并得出与本文类似的结论。Williams Peng写到“The results of these experiments have been that the success rate of BPTT(2h; h) is essentially identical to that of BPTT(h)”，也就是说，他比较了“真”截断h-steps反向传播与BPTT(2n, n)(这与截断2n-steps Tensorflow-style反向传播相似)，最终发现它们表现相近。
