@@ -1,6 +1,10 @@
 > 本文[GitHub地址](https://github.com/zydarChen/MLnote/tree/master/LSTM/BPTT)
 
-> [Styles of Truncated Backpropagation](https://r2rt.com/styles-of-truncated-backpropagation.html)
+> [博客地址]()
+
+> 原文[Styles of Truncated Backpropagation](https://r2rt.com/styles-of-truncated-backpropagation.html)
+
+> 翻译带个人理解，建议啃原文
 
 # Styles of Truncated Backpropagation
 笔者在之前的博文[Recurrent Neural Networks in Tensorflow](https://r2rt.com/recurrent-neural-networks-in-tensorflow-i.html)中观察到，TensorFlow的截断反向传播方式与“误差最多反向传播n steps”不同。笔者将在这篇博文中基于TensorFlow实现不同的截断反向传播算法，并研究哪种方法更好。
