@@ -1,5 +1,0 @@
-- 用sin序列预测cos序列
-- 50batch，20step，每次训练1000时间点
-- x_batch shape (50,20,1) Y_batch shape (50, 20, 1)
-- 第一个batch[0, 999]，第二个batch[20, 1019]
-- 每次绘制一个batch的第一个时间序列，也就是前20个

@@ -3,3 +3,4 @@ data
 video
 .idea
 Jupyter.lnk
+__pycache__
